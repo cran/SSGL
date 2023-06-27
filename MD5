@@ -1,0 +1,15 @@
+b9ac160664c3fbd0e1a132c9d491513f *DESCRIPTION
+e6beded009eac73773e0dc1b2158a1c4 *NAMESPACE
+438c6a7c120cd10538fa6dc3f959e2d3 *R/SSGL.R
+c26a17b41516a6a5cdb2c22dc69e6744 *R/cv_SSGL.R
+71f5f406170bde4cf708f52b4e9d97e7 *R/cv_gamma_grpreg.R
+77c385e406e3e3222242d3b6d1a16988 *R/cv_nb_grpreg.R
+86fd61477bdceee96f5c4be057d3a648 *R/gamma_grpreg.R
+45504564ba79f9946b0abeeb9757cef8 *R/helper_functions.R
+b16e7211f08c9aa506f11e2e36a2e107 *R/nb_grpreg.R
+9ad1be8b81ea5d44261f6724ab5cc0b8 *man/SSGL.Rd
+8654ad7f4db1264256b2c4f9904528b6 *man/cv_SSGL.Rd
+a3646cc1bd8bb02fc6da5a2006d44c55 *man/cv_gamma_grpreg.Rd
+14577d7ee63876b5640c3d7c9c2423e7 *man/cv_nb_grpreg.Rd
+78e3cc38bce8fb3aba23803498680527 *man/gamma_grpreg.Rd
+ff1c49d7adcadc72ef7c33616a91a859 *man/nb_grpreg.Rd

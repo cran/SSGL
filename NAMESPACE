@@ -1,0 +1,15 @@
+# Exports
+
+export(cv_SSGL)
+export(SSGL)
+export(gamma_grpreg)
+export(nb_grpreg)
+export(cv_gamma_grpreg)
+export(cv_nb_grpreg)
+
+# Imports
+
+importFrom("stats","glm","Gamma","vcov","sd")
+importFrom("grpreg","grpreg")
+importFrom("pracma", "sqrtm")
+importFrom("MASS", "negative.binomial")
