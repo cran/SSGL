@@ -1,15 +1,15 @@
 # Exports
 
-export(cv_SSGL)
 export(SSGL)
-export(gamma_grpreg)
-export(nb_grpreg)
-export(cv_gamma_grpreg)
-export(cv_nb_grpreg)
+export(SSGL_cv)
+export(SSGL_gibbs)
+
 
 # Imports
-
-importFrom("stats","glm","Gamma","vcov","sd")
-importFrom("grpreg","grpreg")
-importFrom("pracma", "sqrtm")
-importFrom("MASS", "negative.binomial")
+importFrom(grpreg,grpreg)
+importFrom(stats,sd,quantile,rnorm,rbinom,rbeta)
+importFrom(caret,createFolds)
+importFrom(MASS,mvrnorm)
+importFrom(Matrix,chol2inv,chol)
+importFrom(GIGrvg,rgig)
+importFrom(BayesLogit,rpg)

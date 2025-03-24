@@ -4,22 +4,16 @@
 ########################################
 ########################################
 
-# This function implements group-regularized regression models in the exponential
-# dispersion family with the spike-and-slab group lasso (SSGL) penalty.
+# This function implements group-regularized regression models for linear, logistic
+# and Poisson regression with the spike-and-slab group lasso (SSGL) penalty.
 
 # INPUTS:
 # Y = n x 1 vector of responses (y_1, ...., y_n) for training data
 # X = n x p design matrix for training data, where ith row is (x_{i1},..., x_{ip})
 # groups = p x 1 vector of group indices or factor level names for each of the p columns of X.
-# family = the exponential family. Currently allows "gaussian", "binomial", "poisson," 
-#          "negativebinomial", and "gamma". Default is "gaussian" for non-binary responses and
-#          "binomial" for binary responses, but "poisson" or "negativebinomial" may be more
-#          appropriate for count data and "gamma" may be more appropriate for right-skewed,
-#          continuous data.
+# family = the exponential family. Currently allows "gaussian", "binomial", and "poisson". 
 # X_test = n_test x p design matrix for test data. If missing, then program computes in-sample
 #          predictions on training data X
-# nb_size = known shape parameter for negative binomial regression. Default is 1
-# gamma_shape = known shape parameter for gamma regression. Default is 1
 # group_weights = group-specific weights. Default is to use the square roots of the group sizes.
 # n_lambda0 = number of lambda0's in our grid. Default is 20.
 # lambda0 = a grid of values for the spike hyperparameter. Note that the program automatically orders 
@@ -46,12 +40,11 @@
 #          X_test was left blank or X_test=X, then in-sample predictions on X are returned.
 # GIC = Lx1 vector of GIC values. The lth entry of GIC corresponds to the lth entry in our lambda0 grid.
 #       Not returned if return_GIC=FALSE. 
-# lambda0_min = value of lambda0 that minimizes the GIC. Not returned if return_GIC=FALSE.
-# min_index = the index of lambda0_min in lambda0. Not returned if return_GIC=FALSE.
+# lambda0_GIC_min = value of lambda0 that minimizes the GIC. Not returned if return_GIC=FALSE.
+# min_GIC_index = the index of lambda0_min in lambda0. Not returned if return_GIC=FALSE.
 
-SSGL = function(Y, X, groups, family=c("gaussian","binomial","poisson","negativebinomial","gamma"),
-                X_test, nb_size=1, gamma_shape=1, group_weights, n_lambda0=25, 
-                lambda0, lambda1=1, a=1, b=dim(X)[2],
+SSGL = function(Y, X, groups, family=c("gaussian","binomial","poisson"),
+                X_test, group_weights, n_lambda0=25, lambda0, lambda1=1, a=1, b=length(unique(groups)),
                 max_iter=100, tol = 1e-6, return_GIC=TRUE, print_lambda0=TRUE) {
   
   
@@ -74,6 +67,7 @@ SSGL = function(Y, X, groups, family=c("gaussian","binomial","poisson","negative
   ## If test data is missing, make it the same as the training data
   if(missing(X_test)) X_test = X
   n_test = dim(X_test)[1]
+  X_test = as.matrix(X_test)
   
   ## Check that dimensions are conformable
   if(length(Y) != dim(X)[1])
@@ -90,22 +84,11 @@ SSGL = function(Y, X, groups, family=c("gaussian","binomial","poisson","negative
   family <- match.arg(family)
   
   ## Check that the data can be used for the respective family
-  if(family=="poisson" || family=="negativebinomial"){
+  if(family=="poisson"){
     if(any(Y<0))
       stop("All counts must be greater than or equal to zero.")
     if(any(Y-floor(Y)!=0))
       stop("All counts must be whole numbers.")
-  }
-  if(family=="negativebinomial"){
-    ## Check that nb_size is strictly positive
-    if (nb_size<=0)
-      stop("Size parameter for negative binomial density must be strictly positive.")
-    ## Check that p is less than or equal to n
-    if(p > n) {
-      stop("For group-regularized negative binomial regression, we require the
-          total number of covariates to be less than or equal to sample size. 
-          Consider reducing the number of covariates.")
-    }
   }
   if(family=="binomial"){
     if(any(Y<0))
@@ -115,19 +98,7 @@ SSGL = function(Y, X, groups, family=c("gaussian","binomial","poisson","negative
     if(any(Y-floor(Y)!=0))
       stop("All binary responses must be either '0' or '1.'")
   }
-  if(family=="gamma"){
-    if(any(Y<=0))
-      stop("All responses must be strictly positive.")
-    if(gamma_shape<=0)
-      stop("Shape parameter for gamma density must be strictly positive.")
-    ## Check that p is less than or equal to n
-    if(p > n) {
-      stop("For group-regularized gamma regression, we require the total
-          number of covariates to be less than or equal to sample size. 
-          Consider reducing the number of covariates.")
-    }
-  }
-  
+
   ## Check that weights are all greater than or equal to 0
   if(!missing(group_weights)){
     if(!all(group_weights>=0))
@@ -190,9 +161,9 @@ SSGL = function(Y, X, groups, family=c("gaussian","binomial","poisson","negative
       } else if(n_lambda0 > 1) {
         max_lambda = min(100, max(abs(norms_vec)))
         max_lambda = max(max_lambda, lambda1+50)
-        if(family=="poisson" || family=="negativebinomial"){
+        if(family=="poisson"){
           lambda0 = seq(from=max_lambda, to=lambda1+7, length=n_lambda0)
-        } else if(family=="gaussian" || family=="gamma"){
+        } else if(family=="gaussian"){
           lambda0 = seq(from=max_lambda, to=lambda1+1, length=n_lambda0)
         }
       }
@@ -229,8 +200,7 @@ SSGL = function(Y, X, groups, family=c("gaussian","binomial","poisson","negative
                         n=n, G=G, a=a, b=b, group_weights=group_weights, 
                         lambda0=lambda0[l], lambda1=lambda1, 
                         beta0_init=beta0_init, beta_init=beta_init, 
-                        theta_init=theta_init, nb_size=nb_size, 
-                        gamma_shape=gamma_shape, max_iter=max_iter, tol=tol)
+                        theta_init=theta_init, max_iter=max_iter, tol=tol)
     
     ## Save values for the next pass and also store them as a 'warm start'
     ## to the next lambda0 in our grid
@@ -255,7 +225,7 @@ SSGL = function(Y, X, groups, family=c("gaussian","binomial","poisson","negative
       Y_pred[,l] = beta0[l]+X_test%*%beta[,l]
     } else if(family=="binomial") {
       Y_pred[,l] = 1/(1+exp(-(beta0[l]+X_test%*%beta[,l])))
-    } else if(family=="poisson" || family=="negativebinomial" || family=="gamma"){
+    } else if(family=="poisson"){
       Y_pred[,l] = exp(beta0[l]+X_test%*%beta[,l])
     }
   }
@@ -299,23 +269,13 @@ SSGL = function(Y, X, groups, family=c("gaussian","binomial","poisson","negative
         term1[Y!=0] = Y[Y!=0]*log(Y[Y!=0]/mu[Y!=0])
         SSGL_dev[l] = 2*sum(term1-(Y-mu))
       }
-      if(family=="negativebinomial"){
-        mu = exp(beta0[l]+X%*%beta[,l])
-        term1 = rep(0, length(Y))
-        term1[Y!=0] = Y[Y!=0]*log(Y[Y!=0]/mu[Y!=0])
-        SSGL_dev[l] = 2*sum(term1-(Y+nb_size)*log((1+Y/nb_size)/(1+mu/nb_size)))
-      } 
-      if(family=="gamma"){
-        mu = exp(beta0[l]+X%*%beta[,l])
-        SSGL_dev[l] = 2*sum(-log(Y/mu)+(Y-mu)/mu)
-      }
     
       # Compute GIC
       GIC[l] = SSGL_dev[l]/n + (log(log(n))*log(p)*length(which(beta[,l]!=0)))/n
     }
     min_GIC = GIC[which.min(GIC)]
-    min_index = max(which(GIC==min_GIC))
-    lambda0_min = lambda0[min_index]
+    min_GIC_index = max(which(GIC==min_GIC))
+    lambda0_GIC_min = lambda0[min_GIC_index]
   }
   
   #####################
@@ -330,8 +290,8 @@ SSGL = function(Y, X, groups, family=c("gaussian","binomial","poisson","negative
                         classifications=classifications,
                         Y_pred=Y_pred,
                         GIC=GIC,
-                        lambda0_min=lambda0_min,
-                        min_index=min_index) 
+                        lambda0_GIC_min=lambda0_GIC_min,
+                        min_GIC_index=min_GIC_index) 
   } else {
     SSGL_output <- list(lambda0=lambda0,
                         beta=beta,

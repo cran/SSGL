@@ -41,9 +41,9 @@ lambdaStar = function(beta, lambda1, lambda0, theta) {
 #' Here, lambda0 is a single tuning parameter
 #' @keywords internal
 SSGL_EM = function(Y, X, groups, 
-                   family=c("gaussian","binomial","poisson","negativebinomial","gamma"), 
-                   n, G, a, b, group_weights, lambda0, lambda1, beta0_init, beta_init, theta_init, 
-                   nb_size, gamma_shape, max_iter, tol){
+                   family=c("gaussian","binomial","poisson"), 
+                   n, G, a, b, group_weights, lambda0, lambda1, beta0_init, 
+                   beta_init, theta_init, max_iter, tol){
   
   ## Coercion
   family <- match.arg(family)
@@ -93,28 +93,12 @@ SSGL_EM = function(Y, X, groups,
     ## Update beta0 and beta
     ## Note that grpreg solves is -(1/n)*loglik(beta0,beta) + pen(beta)
     ## so we have to multiply by 1/n in the penalty
-    if(family=="gaussian" || family=="binomial" || family=="poisson"){
-      
-      solve_obj = grpreg::grpreg(X, Y, group=groups, penalty="grLasso", family=family, 
-                                 lambda=1, group.multiplier=group_weights*(lambdastar_k/n))
-      beta0 = solve_obj$beta[1]
-      beta = solve_obj$beta[-1]
 
-    } else if(family=="negativebinomial"){
-      
-      solve_obj = nb_grpreg(Y=Y, X=X, groups=groups, nb_size=nb_size, penalty="gLASSO", 
-                            group_weights=group_weights*(lambdastar_k/n), lambda=1)  
-      beta0 = solve_obj$beta0
-      beta = solve_obj$beta
+    solve_obj = grpreg::grpreg(X, Y, group=groups, penalty="grLasso", family=family, 
+                               lambda=1, group.multiplier=group_weights*(lambdastar_k/n))
+    beta0 = solve_obj$beta[1]
+    beta = solve_obj$beta[-1]
 
-    } else if(family=="gamma"){
-      
-      solve_obj = gamma_grpreg(Y=Y, X=X, groups=groups, gamma_shape=gamma_shape, penalty="gLASSO",
-                               group_weights=group_weights*(lambdastar_k/n), lambda=1)
-      beta0 = solve_obj$beta0
-      beta = solve_obj$beta
-    }
-    
     ## Update diff
     diff = sum((beta-beta_old)^2)/(sum(beta_old^2)+1e-8)
   }
